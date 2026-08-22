@@ -1,9 +1,11 @@
 package lib.context;
 
+import lib.annotation.Inject;
 import lib.bean.BeanDefinition;
 import lib.bean.BeanRegistry;
 import lib.bean.BeanState;
 import lib.exception.CircularDependencyException;
+import lib.scanner.ComponentScanner;
 import lib.util.Optional;
 
 import java.lang.reflect.Constructor;
@@ -22,10 +24,6 @@ public class ApplicationContext {
     }
 
 
-    public void register(Class<?> clazz) {
-        registry.register(clazz);
-    }
-
     public <T> T getBean(Class<T> clazz) {
 
         Optional<BeanDefinition> beanOpt = registry.findByType(clazz);
@@ -34,7 +32,7 @@ public class ApplicationContext {
             throw new RuntimeException("bean not found");
         }
 
-        return clazz.cast(beanOpt.get().getInstance());
+        return clazz.cast(createBean(beanOpt.get()));
     }
 
     private Object createBean(BeanDefinition definition) {
@@ -55,8 +53,7 @@ public class ApplicationContext {
         try {
 
             Class<?> beanClass = definition.getBeanClass();
-            Constructor<?> constructor =
-                    beanClass.getDeclaredConstructors()[0];
+            Constructor<?> constructor = resolveConstructor(beanClass);
 
             Class<?>[] parameters =
                     constructor.getParameterTypes();
@@ -90,5 +87,43 @@ public class ApplicationContext {
                     e
             );
         }
+    }
+
+    private Constructor<?> resolveConstructor(Class<?> clazz) {
+
+        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+        Constructor<?> injectConstructor = null;
+
+        for (Constructor<?> constructor : constructors) {
+            if (constructor.isAnnotationPresent(Inject.class)) {
+                if (injectConstructor != null) {
+                    throw new RuntimeException(
+                            "Multiple @Inject annotations found on "
+                                    + clazz.getName()
+                    );
+                }
+                injectConstructor = constructor;
+            }
+        }
+
+        if (injectConstructor != null) {
+            return injectConstructor;
+        }
+
+        if (constructors.length == 1) {
+            return constructors[0];
+        }
+
+        throw new RuntimeException(
+                "No @Inject constructor found: "
+                        + clazz.getName()
+        );
+    }
+
+    public void scan(String basePackage) {
+        ComponentScanner scanner =
+                new ComponentScanner(registry);
+
+        scanner.scan(basePackage);
     }
 }

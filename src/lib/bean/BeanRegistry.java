@@ -28,9 +28,9 @@ public class BeanRegistry {
     }
 
     public Optional<BeanDefinition> findByType(Class<?> type) {
-        for (int i = 0; i < definitions.size(); i++) {
-            if (definitions.get(i).getBeanClass().equals(type)) {
-                return Optional.of(definitions.get(i));
+        for (BeanDefinition bd : definitions) {
+            if (bd.getBeanClass().equals(type)) {
+                return Optional.of(bd);
             }
         }
         return Optional.empty();

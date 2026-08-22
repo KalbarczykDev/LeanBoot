@@ -1,5 +1,8 @@
 package lib.util;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 public class LinkedList<T> implements List<T> {
 
     private Node<T> head;
@@ -117,6 +120,28 @@ public class LinkedList<T> implements List<T> {
         }
 
         return current.getData();
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<>() {
+            private Node<T> current = head;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                T data = current.getData();
+                current = current.getNext();
+                return data;
+            }
+        };
     }
 
     static class Node<T> {
