@@ -1,6 +1,7 @@
 package lib.context;
 
 import lib.annotation.Inject;
+import lib.annotation.Qualifier;
 import lib.bean.BeanDefinition;
 import lib.bean.BeanRegistry;
 import lib.bean.BeanState;
@@ -9,6 +10,7 @@ import lib.scanner.ComponentScanner;
 import lib.util.Optional;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Parameter;
 
 public class ApplicationContext {
     private final BeanRegistry registry;
@@ -55,23 +57,41 @@ public class ApplicationContext {
             Class<?> beanClass = definition.getBeanClass();
             Constructor<?> constructor = resolveConstructor(beanClass);
 
-            Class<?>[] parameters =
-                    constructor.getParameterTypes();
+            Parameter[] parameters =
+                    constructor.getParameters();
 
             Object[] arguments =
                     new Object[parameters.length];
 
             for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+
+                Class<?> requiredType = parameter.getType();
+                String qualifier = null;
+
+                if (parameter.isAnnotationPresent(Qualifier.class)) {
+                    Qualifier qualifierAnnotation =
+                            parameter.getAnnotation(Qualifier.class);
+
+                    qualifier = qualifierAnnotation.value();
+                }
+
                 Optional<BeanDefinition> dependency =
-                        registry.findByType(parameters[i]);
+                        registry.resolve(requiredType, qualifier);
 
                 if (dependency.isEmpty()) {
-                    throw new RuntimeException(
+                    String message =
                             "Dependency not found: "
-                                    + parameters[i].getName()
+                                    + requiredType.getName()
                                     + " required by "
-                                    + beanClass.getName()
-                    );
+                                    + beanClass.getName();
+
+                    if (qualifier != null) {
+                        message +=
+                                " with qualifier '" + qualifier + "'";
+                    }
+
+                    throw new RuntimeException(message);
                 }
 
                 arguments[i] = createBean(dependency.get());

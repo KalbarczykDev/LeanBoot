@@ -9,8 +9,7 @@ public class Application {
     void main() {
         ApplicationContext context = LeanBoot.run(Application.class);
 
-        ExampleService service = context.getBean(ExampleService.class);
-
-        service.example();
+        NotificationService service = context.getBean(NotificationService.class);
+        service.send();
     }
 }
