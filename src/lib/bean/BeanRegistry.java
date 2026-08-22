@@ -1,8 +1,8 @@
 package lib.bean;
 
-import lib.annotation.Component;
 import lib.exception.DuplicateBeanException;
 import lib.exception.NotAComponentException;
+import lib.scanner.ComponentDetector;
 import lib.util.LinkedList;
 import lib.util.Optional;
 
@@ -16,7 +16,7 @@ public class BeanRegistry {
 
     public void register(Class<?> clazz) {
 
-        if (!clazz.isAnnotationPresent(Component.class)) {
+        if (!ComponentDetector.isComponent(clazz)) {
             throw new NotAComponentException(clazz.getName());
         }
 

@@ -1,9 +1,9 @@
 package example;
 
-import lib.annotation.Component;
 import lib.annotation.Inject;
+import lib.annotation.Service;
 
-@Component
+@Service
 public class ExampleService {
 
     private final ExampleComponent component;

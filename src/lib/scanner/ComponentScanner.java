@@ -1,6 +1,5 @@
 package lib.scanner;
 
-import lib.annotation.Component;
 import lib.bean.BeanRegistry;
 
 import java.io.File;
@@ -76,6 +75,7 @@ public class ComponentScanner {
                 String className =
                         packageName + "." + simpleName;
 
+                //ignore compiled classes filenames
                 if (simpleName.contains("$")) {
                     continue;
                 }
@@ -98,7 +98,7 @@ public class ComponentScanner {
                     classLoader
             );
 
-            if (clazz.isAnnotationPresent(Component.class)) {
+            if (ComponentDetector.isComponent(clazz)) {
                 registry.register(clazz);
             }
         } catch (ClassNotFoundException e) {
