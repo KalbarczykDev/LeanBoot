@@ -2,6 +2,8 @@ package lib.context;
 
 import lib.bean.BeanDefinition;
 import lib.bean.BeanRegistry;
+import lib.bean.BeanState;
+import lib.exception.CircularDependencyException;
 import lib.util.Optional;
 
 import java.lang.reflect.Constructor;
@@ -24,7 +26,7 @@ public class ApplicationContext {
         registry.register(clazz);
     }
 
-    public <T> T getBean(Class<T> clazz){
+    public <T> T getBean(Class<T> clazz) {
 
         Optional<BeanDefinition> beanOpt = registry.findByType(clazz);
 
@@ -37,9 +39,18 @@ public class ApplicationContext {
 
     private Object createBean(BeanDefinition definition) {
 
-        if (definition.getInstance() != null) {
+        if (definition.getState() == BeanState.CREATED) {
             return definition.getInstance();
         }
+
+        if (definition.getState() == BeanState.CREATING) {
+            throw new CircularDependencyException(
+                    "circular dependency when creating bean " +
+                            definition.getBeanClass().getName()
+            );
+        }
+
+        definition.setState(BeanState.CREATING);
 
         try {
 
@@ -70,9 +81,10 @@ public class ApplicationContext {
             }
             Object instance = constructor.newInstance(arguments);
             definition.setInstance(instance);
-
+            definition.setState(BeanState.CREATED);
             return instance;
         } catch (Exception e) {
+            definition.setState(BeanState.NOT_CREATED);
             throw new RuntimeException(
                     "Could not create bean: " + definition.getBeanClass().getName(),
                     e
