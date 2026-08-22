@@ -1,17 +1,29 @@
 package lib.bean;
 
+import lib.annotation.Component;
+import lib.exception.DuplicateBeanException;
+import lib.exception.NotAComponentException;
 import lib.util.LinkedList;
 import lib.util.Optional;
 
 public class BeanRegistry {
     //TODO: replace with HashMap after implementing custom version?
-    LinkedList<BeanDefinition> definitions;
+    private final LinkedList<BeanDefinition> definitions;
 
     public BeanRegistry() {
         this.definitions = new LinkedList<>();
     }
 
     public void register(Class<?> clazz) {
+
+        if (!clazz.isAnnotationPresent(Component.class)) {
+            throw new NotAComponentException(clazz.getName());
+        }
+
+        if (findByType(clazz).isPresent()) {
+            throw new DuplicateBeanException(clazz.getName());
+        }
+
         definitions.add(new BeanDefinition(clazz));
     }
 
@@ -28,7 +40,7 @@ public class BeanRegistry {
         return definitions.size();
     }
 
-    public BeanDefinition get(int index){
+    public BeanDefinition get(int index) {
         return definitions.get(index);
     }
 }
