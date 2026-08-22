@@ -10,6 +10,6 @@ void main() {
     context.register(ExampleService.class);
     context.init();
 
-    ExampleService service = (ExampleService) context.getBean(ExampleService.class);
+    ExampleService service = context.getBean(ExampleService.class);
     service.example();
 }

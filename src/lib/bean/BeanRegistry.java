@@ -23,4 +23,12 @@ public class BeanRegistry {
         }
         return Optional.empty();
     }
+
+    public int size() {
+        return definitions.size();
+    }
+
+    public BeanDefinition get(int index){
+        return definitions.get(index);
+    }
 }

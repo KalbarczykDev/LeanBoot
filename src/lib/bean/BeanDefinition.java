@@ -19,4 +19,5 @@ public class BeanDefinition {
     public void setInstance(Object instance) {
         this.instance = instance;
     }
+
 }
