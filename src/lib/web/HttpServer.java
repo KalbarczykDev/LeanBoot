@@ -1,44 +1,27 @@
 package lib.web;
 
-import java.net.*;
-import java.io.*;
-import java.time.LocalDateTime;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import lib.util.StringBuilder;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class HttpServer {
 
-    private static final int THREAD_POOL_SIZE = 10;
-
     private final int port;
-
     private boolean running;
 
-    String testBody = """
-            <html>
-                    <head>
-                        <title>LeanBoot</title>
-                    </head>
-                    <body>
-                        <h1>LeanBoot</h1>
-                        <p>Welcome</p>
-                        <ul>
-                            <li>
-                                <p>You</p>
-                            </li>
-                            <li>
-                                <p>only</p>
-                            </li>
-                            <li>
-                                <p>need</p>
-                            </li>
-                            <li>
-                                <p>java</p>
-                            </li>
-                        </ul>
-                     </body>
-                 </html>
-            """;
+    private static final String RESPONSE_BODY =
+            """
+                    HTTP/1.1 200 OK\r
+                    Content-Type: text/plain\r
+                    Content-Length: 12\r
+                    Connection: close\r
+                    \r
+                    Hello World!""";
+
 
     public HttpServer(int port) {
         this.running = false;
@@ -46,48 +29,68 @@ public class HttpServer {
     }
 
     public void start() {
-
-        try (ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-             ServerSocket serverSocket = new ServerSocket(port)) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             running = true;
             while (running) {
                 Socket clientSocket = serverSocket.accept();
-                threadPool.execute(() -> handleClient(clientSocket));
+                Thread.startVirtualThread(
+                        () -> handleClient(clientSocket)
+                );
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
     private void handleClient(Socket clientSocket) {
-        try (clientSocket; BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
-             BufferedWriter out = new BufferedWriter(
-                     new OutputStreamWriter(clientSocket.getOutputStream())
-             )
+        try (
+                Socket socket = clientSocket;
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream()
         ) {
-            try {
-                String clientInputLine;
-                while ((clientInputLine = in.readLine()) != null) {
-                    if (clientInputLine.isEmpty()) {
-                        break;
-                    }
-                }
-                LocalDateTime now = LocalDateTime.now();
+            String request = readRequest(inputStream);
+            String response = handleRequest(request);
 
-                out.write("HTTP/1.0 200 OK\r\n");
-                out.write("Date: " + now + "\r\n");
-                out.write("Server: Custom Server\r\n");
-                out.write("Content-Type: text/html\r\n");
-                out.write("Content-Length: " + testBody.length() + "\r\n");
-                out.write("\r\n");
-                out.write(testBody);
-            } catch (Exception e) {
-                //
-            }
-        } catch (IOException e) {
-            //
+            outputStream.write(response.getBytes());
+            outputStream.flush();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
+    }
+
+    private String readRequest(InputStream inputStream) throws IOException {
+        StringBuilder input = new StringBuilder();
+        int headerEndState = 0;
+        int currentByte;
+        while ((currentByte = inputStream.read()) != -1) {
+            char currentChar = (char) currentByte;
+            input.append(currentChar);
+
+            if (headerEndState == 0) {
+                headerEndState = currentChar == '\r' ? 1 : 0;
+                continue;
+            }
+            if (headerEndState == 1) {
+                headerEndState = currentChar == '\n' ? 2
+                        : currentChar == '\r' ? 1
+                        : 0;
+                continue;
+            }
+            if (headerEndState == 2) {
+                headerEndState = currentChar == '\r' ? 3 : 0;
+                continue;
+            }
+            if (currentChar == '\n') {
+                break;
+            }
+
+            headerEndState = currentChar == '\r' ? 1 : 0;
+        }
+        return input.toString();
+    }
+
+    private String handleRequest(String request) {
+        return RESPONSE_BODY;
     }
 }
 

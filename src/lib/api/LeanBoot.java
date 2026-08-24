@@ -30,11 +30,11 @@ public class LeanBoot {
         context.scan(basePackage);
         context.init();
 
-        try {
-            new HttpServer(8080).start();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+        HttpServer server = new HttpServer(8080);
+
+        Thread.ofPlatform()
+                .name("leanboot-server")
+                .start(server::start);
 
         return context;
     }
