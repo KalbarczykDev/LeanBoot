@@ -2,6 +2,7 @@ package lib.api;
 
 import lib.annotation.LeanBootApplication;
 import lib.context.ApplicationContext;
+import lib.web.HttpServer;
 
 public class LeanBoot {
     private LeanBoot() {
@@ -28,6 +29,12 @@ public class LeanBoot {
 
         context.scan(basePackage);
         context.init();
+
+        try {
+            new HttpServer(8080).start();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
 
         return context;
     }
