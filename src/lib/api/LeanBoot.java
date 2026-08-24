@@ -2,13 +2,20 @@ package lib.api;
 
 import lib.annotation.LeanBootApplication;
 import lib.context.ApplicationContext;
+import lib.logging.LoggerFactory;
 import lib.web.HttpServer;
 
+import lib.logging.Logger;
+
 public class LeanBoot {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LeanBoot.class);
+
     private LeanBoot() {
     }
 
     public static ApplicationContext run(Class<?> applicationClass) {
+        LOGGER.info("Starting LeanBoot application: " + applicationClass.getName());
         if (!applicationClass.isAnnotationPresent(LeanBootApplication.class)) {
             throw new RuntimeException(
                     "Missing @LeanBootApplication on "
@@ -28,7 +35,9 @@ public class LeanBoot {
         ApplicationContext context = new ApplicationContext();
 
         context.scan(basePackage);
+        LOGGER.info("Component scanning completed for package: " + basePackage);
         context.init();
+        LOGGER.info("Application Context initialized");
 
         HttpServer server = new HttpServer(8080);
 

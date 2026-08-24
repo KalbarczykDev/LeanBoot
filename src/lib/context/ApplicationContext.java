@@ -6,6 +6,8 @@ import lib.bean.BeanDefinition;
 import lib.bean.BeanRegistry;
 import lib.bean.BeanState;
 import lib.exception.CircularDependencyException;
+import lib.logging.Logger;
+import lib.logging.LoggerFactory;
 import lib.scanner.ComponentScanner;
 import lib.util.Optional;
 
@@ -13,6 +15,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
 
 public class ApplicationContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationContext.class);
     private final BeanRegistry registry;
 
     public ApplicationContext() {
@@ -38,7 +41,7 @@ public class ApplicationContext {
     }
 
     private Object createBean(BeanDefinition definition) {
-
+        LOGGER.debug("Creating bean " + definition.getBeanClass().getName());
         if (definition.getState() == BeanState.CREATED) {
             return definition.getInstance();
         }
@@ -99,6 +102,7 @@ public class ApplicationContext {
             Object instance = constructor.newInstance(arguments);
             definition.setInstance(instance);
             definition.setState(BeanState.CREATED);
+            LOGGER.debug("Created bean " + definition.getBeanClass().getName());
             return instance;
         } catch (Exception e) {
             definition.setState(BeanState.NOT_CREATED);

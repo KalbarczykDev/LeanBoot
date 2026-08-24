@@ -1,5 +1,7 @@
 package lib.web;
 
+import lib.logging.Logger;
+import lib.logging.LoggerFactory;
 import lib.util.StringBuilder;
 
 import java.io.IOException;
@@ -9,6 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class HttpServer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpServer.class);
 
     private final int port;
     private boolean running;
@@ -30,15 +34,17 @@ public class HttpServer {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+            LOGGER.info("HTTP Server listening on port: " + port);
             running = true;
             while (running) {
                 Socket clientSocket = serverSocket.accept();
+                LOGGER.debug("Accepted connection from: " + clientSocket.getInetAddress());
                 Thread.startVirtualThread(
                         () -> handleClient(clientSocket)
                 );
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOGGER.error("HTTP server failed on port: " + port, e);
         }
     }
 
@@ -54,7 +60,7 @@ public class HttpServer {
             outputStream.write(response.getBytes());
             outputStream.flush();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOGGER.error("Could not handle client connection: ", e);
         }
     }
 
@@ -90,6 +96,7 @@ public class HttpServer {
     }
 
     private String handleRequest(String request) {
+        LOGGER.debug(String.format("Received request: %s", request));
         return RESPONSE_BODY;
     }
 }

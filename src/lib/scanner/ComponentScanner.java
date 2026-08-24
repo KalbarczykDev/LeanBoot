@@ -1,12 +1,15 @@
 package lib.scanner;
 
 import lib.bean.BeanRegistry;
+import lib.logging.Logger;
+import lib.logging.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Enumeration;
 
 public class ComponentScanner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ComponentScanner.class);
     private final BeanRegistry registry;
 
     public ComponentScanner(BeanRegistry registry) {
@@ -14,6 +17,7 @@ public class ComponentScanner {
     }
 
     public void scan(String basePackage) {
+        LOGGER.debug("Scanning for components in package " + basePackage);
         try {
             String packagePath = basePackage.replace('.', '/');
 
@@ -99,6 +103,7 @@ public class ComponentScanner {
             );
 
             if (ComponentDetector.isComponent(clazz)) {
+                LOGGER.debug("Discovered component " + className);
                 registry.register(clazz);
             }
         } catch (ClassNotFoundException e) {

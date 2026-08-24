@@ -5,11 +5,14 @@ import lib.annotation.Qualifier;
 import lib.exception.DuplicateBeanException;
 import lib.exception.MultipleBeansException;
 import lib.exception.NotAComponentException;
+import lib.logging.Logger;
+import lib.logging.LoggerFactory;
 import lib.scanner.ComponentDetector;
 import lib.util.LinkedList;
 import lib.util.Optional;
 
 public class BeanRegistry {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BeanRegistry.class);
 
     private final LinkedList<BeanDefinition> definitions;
 
@@ -25,8 +28,8 @@ public class BeanRegistry {
         if (findExact(clazz).isPresent()) {
             throw new DuplicateBeanException(clazz.getName());
         }
-
         definitions.add(new BeanDefinition(clazz));
+        LOGGER.debug("Registered bean " + clazz.getName());
     }
 
     public Optional<BeanDefinition> findByType(Class<?> type) {
@@ -121,8 +124,8 @@ public class BeanRegistry {
                                     + requiredType.getName()
                                     + ": "
                                     + primaryMatch
-                                        .getBeanClass()
-                                        .getName()
+                                    .getBeanClass()
+                                    .getName()
                                     + ", "
                                     + beanClass.getName()
                     );
