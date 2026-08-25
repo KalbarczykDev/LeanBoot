@@ -3,9 +3,11 @@ package lib.api;
 import lib.annotation.LeanBootApplication;
 import lib.context.ApplicationContext;
 import lib.logging.LoggerFactory;
+import lib.scanner.ControllerRouteScanner;
 import lib.web.HttpServer;
 
 import lib.logging.Logger;
+import lib.web.WebRouter;
 
 public class LeanBoot {
 
@@ -39,7 +41,14 @@ public class LeanBoot {
         context.init();
         LOGGER.info("Application Context initialized");
 
-        HttpServer server = new HttpServer(8080);
+        WebRouter router = new WebRouter();
+
+        ControllerRouteScanner routeScanner = new ControllerRouteScanner();
+        LOGGER.info("Controller route scanner initialized");
+        routeScanner.scan(context, router);
+        LOGGER.info("Controller route scanner completed for package: " + basePackage);
+
+        HttpServer server = new HttpServer(8080, router);
 
         Thread.ofPlatform()
                 .name("leanboot-server")

@@ -9,8 +9,11 @@ import lib.exception.CircularDependencyException;
 import lib.logging.Logger;
 import lib.logging.LoggerFactory;
 import lib.scanner.ComponentScanner;
+import lib.util.LinkedList;
+import lib.util.List;
 import lib.util.Optional;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
 
@@ -38,6 +41,22 @@ public class ApplicationContext {
         }
 
         return clazz.cast(createBean(beanOpt.get()));
+    }
+
+    public List<Object> getBeansAnnotatedWith(
+            Class<? extends Annotation> annotationType
+    ) {
+        List<Object> beans = new LinkedList<>();
+
+        for (int i = 0; i < registry.size(); i++) {
+            BeanDefinition definition = registry.get(i);
+            Class<?> beanClass = definition.getBeanClass();
+
+            if (beanClass.isAnnotationPresent(annotationType)) {
+                beans.add(createBean(definition));
+            }
+        }
+        return beans;
     }
 
     private Object createBean(BeanDefinition definition) {

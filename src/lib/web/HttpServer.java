@@ -13,20 +13,13 @@ public class HttpServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpServer.class);
 
     private final int port;
+    private final WebRouter router;
+
     private boolean running;
 
-    private static final String RESPONSE_BODY =
-            """
-                    HTTP/1.1 200 OK\r
-                    Content-Type: text/plain\r
-                    Content-Length: 12\r
-                    Connection: close\r
-                    \r
-                    Hello World!""";
-
-
-    public HttpServer(int port) {
+    public HttpServer(int port, WebRouter router) {
         this.running = false;
+        this.router = router;
         this.port = port;
     }
 
@@ -65,7 +58,7 @@ public class HttpServer {
 
     private String handleRequest(HttpRequest request) {
         LOGGER.debug("Received request: " + request);
-        return RESPONSE_BODY;
+        return "";
     }
 }
 
