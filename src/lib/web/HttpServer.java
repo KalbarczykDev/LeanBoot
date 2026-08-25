@@ -2,7 +2,9 @@ package lib.web;
 
 import lib.logging.Logger;
 import lib.logging.LoggerFactory;
+import lib.util.Optional;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.InputStream;
@@ -47,18 +49,71 @@ public class HttpServer {
         ) {
             HttpRequestParser parser = new HttpRequestParser(inputStream);
             HttpRequest request = parser.parse();
-            String response = handleRequest(request);
+            HttpResponse response = handleRequest(request);
 
-            outputStream.write(response.getBytes());
+            outputStream.write(response.toString().getBytes());
             outputStream.flush();
         } catch (Exception e) {
             LOGGER.error("Could not handle client connection: ", e);
         }
     }
 
-    private String handleRequest(HttpRequest request) {
+    private HttpResponse handleRequest(HttpRequest request) {
         LOGGER.debug("Received request: " + request);
-        return "";
+
+        Optional<Route> routeOpt = router.findRoute(
+                request.method(),
+                request.path()
+        );
+
+        if (routeOpt.isEmpty()) {
+            return HttpResponseFactory.createHttpResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Route not found"
+            );
+        }
+
+        Route route = routeOpt.get();
+
+        try {
+            Object result = route.handlerMethod().invoke(
+                    route.controller()
+            );
+
+            if (!(result instanceof String body)) {
+                return HttpResponseFactory.createHttpResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Controller method must return String"
+                );
+            }
+
+            return HttpResponseFactory.createHttpResponse(
+                    HttpStatus.OK,
+                    body
+            );
+        } catch (InvocationTargetException exception) {
+            LOGGER.error(
+                    "Controller method failed: "
+                            + route.handlerMethod().getName(),
+                    exception.getCause()
+            );
+
+            return HttpResponseFactory.createHttpResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Internal Server Error"
+            );
+        } catch (IllegalAccessException exception) {
+            LOGGER.error(
+                    "Cannot access controller method: "
+                            + route.handlerMethod().getName(),
+                    exception
+            );
+
+            return HttpResponseFactory.createHttpResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Internal Server Error"
+            );
+        }
     }
 }
 

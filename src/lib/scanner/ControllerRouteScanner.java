@@ -41,7 +41,7 @@ public class ControllerRouteScanner {
                         method
                 );
 
-                router.register(route);
+                router.registerRoute(route);
                 LOGGER.debug(
                         "Registered route "
                                 + route.httpMethod()

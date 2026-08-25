@@ -7,6 +7,6 @@ public record Route(
         HttpMethod httpMethod,
         String path,
         Object controller,
-        Method handlerMethod //class method discovered at runtime
+        Method handlerMethod
 ) {
 }
