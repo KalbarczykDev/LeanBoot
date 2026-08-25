@@ -2,9 +2,7 @@ package lib.web;
 
 import lib.logging.Logger;
 import lib.logging.LoggerFactory;
-import lib.util.StringBuilder;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.InputStream;
@@ -54,7 +52,8 @@ public class HttpServer {
                 InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream()
         ) {
-            String request = readRequest(inputStream);
+            HttpRequestParser parser = new HttpRequestParser(inputStream);
+            HttpRequest request = parser.parse();
             String response = handleRequest(request);
 
             outputStream.write(response.getBytes());
@@ -64,39 +63,8 @@ public class HttpServer {
         }
     }
 
-    private String readRequest(InputStream inputStream) throws IOException {
-        StringBuilder input = new StringBuilder();
-        int headerEndState = 0;
-        int currentByte;
-        while ((currentByte = inputStream.read()) != -1) {
-            char currentChar = (char) currentByte;
-            input.append(currentChar);
-
-            if (headerEndState == 0) {
-                headerEndState = currentChar == '\r' ? 1 : 0;
-                continue;
-            }
-            if (headerEndState == 1) {
-                headerEndState = currentChar == '\n' ? 2
-                        : currentChar == '\r' ? 1
-                        : 0;
-                continue;
-            }
-            if (headerEndState == 2) {
-                headerEndState = currentChar == '\r' ? 3 : 0;
-                continue;
-            }
-            if (currentChar == '\n') {
-                break;
-            }
-
-            headerEndState = currentChar == '\r' ? 1 : 0;
-        }
-        return input.toString();
-    }
-
-    private String handleRequest(String request) {
-        LOGGER.debug(String.format("Received request: %s", request));
+    private String handleRequest(HttpRequest request) {
+        LOGGER.debug("Received request: " + request);
         return RESPONSE_BODY;
     }
 }
