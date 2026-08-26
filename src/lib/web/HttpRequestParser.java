@@ -1,7 +1,6 @@
 package lib.web;
 
-import lib.util.LinkedList;
-import lib.util.List;
+import lib.util.*;
 import lib.util.StringBuilder;
 
 import java.io.IOException;
@@ -32,14 +31,37 @@ public class HttpRequestParser {
         String methodString =
                 inputLine.substring(0, firstSpace);
 
-        String routeString =
+        String requestTarget =
                 inputLine.substring(firstSpace + 1, secondSpace);
 
         String versionString =
                 inputLine.substring(secondSpace + 1);
 
+
+        int questionMarkIndex =
+                requestTarget.indexOf("?");
+
+        String path;
+        String queryString;
+
+        if (questionMarkIndex == -1) {
+            path = requestTarget;
+            queryString = "";
+        } else {
+            path = requestTarget.substring(
+                    0,
+                    questionMarkIndex
+            );
+
+            queryString = requestTarget.substring(
+                    questionMarkIndex + 1
+            );
+        }
+
+
         HttpMethod method = parseMethod(methodString);
         HttpVersion version = parseVersion(versionString);
+        Map<String, String> queryParams = parseQueryParameters(queryString);
         List<HttpHeader> headers = new LinkedList<>();
 
         while (true) {
@@ -57,8 +79,9 @@ public class HttpRequestParser {
 
         return new HttpRequest(
                 method,
-                routeString,
+                path,
                 version,
+                queryParams,
                 headers,
                 body
         );
@@ -85,6 +108,64 @@ public class HttpRequestParser {
         }
 
         return builder.toString();
+    }
+
+    private Map<String, String> parseQueryParameters(
+            String queryString
+    ) throws IOException {
+        Map<String, String> parameters = new HashMap<>();
+
+        if (queryString.isEmpty()) {
+            return parameters;
+        }
+
+        int parameterStart = 0;
+
+        for (int i = 0; i <= queryString.length(); i++) {
+            boolean parameterEnded =
+                    i == queryString.length()
+                            || queryString.charAt(i) == '&';
+
+            if (!parameterEnded) {
+                continue;
+            }
+
+            String parameter =
+                    queryString.substring(parameterStart, i);
+
+            parseQueryParameter(parameter, parameters);
+
+            parameterStart = i + 1;
+        }
+
+        return parameters;
+    }
+
+    private void parseQueryParameter(
+            String parameter,
+            Map<String, String> parameters
+    ) throws IOException {
+        int equalsIndex = parameter.indexOf("=");
+
+        if (equalsIndex == -1) {
+            throw new IOException(
+                    "Invalid query parameter: " + parameter
+            );
+        }
+
+        String name =
+                parameter.substring(0, equalsIndex);
+
+        String value =
+                parameter.substring(equalsIndex + 1);
+
+        if (name.isEmpty()) {
+            throw new IOException(
+                    "Query parameter name cannot be empty"
+            );
+        }
+
+        parameters.put(name, value);
     }
 
     private HttpMethod parseMethod(String value) {

@@ -7,6 +7,7 @@ import lib.scanner.ControllerRouteScanner;
 import lib.web.HttpServer;
 
 import lib.logging.Logger;
+import lib.web.RequestDispatcher;
 import lib.web.WebRouter;
 
 public class LeanBoot {
@@ -48,7 +49,9 @@ public class LeanBoot {
         routeScanner.scan(context, router);
         LOGGER.info("Controller route scanner completed for package: " + basePackage);
 
-        HttpServer server = new HttpServer(8080, router);
+        RequestDispatcher dispatcher = new RequestDispatcher(router);
+
+        HttpServer server = new HttpServer(8080, dispatcher);
 
         Thread.ofPlatform()
                 .name("leanboot-server")
